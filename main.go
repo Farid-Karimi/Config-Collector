@@ -21,7 +21,7 @@ import (
 var (
 	client       = &http.Client{}
 	maxMessages  = 100
-	ConfigsNames = "@Vip_Security join us"
+	ConfigsNames = "prometheus"
 	configs      = map[string]string{
 		"ss":     "",
 		"vmess":  "",
