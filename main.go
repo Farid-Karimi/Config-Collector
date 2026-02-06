@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"flag"
@@ -46,6 +47,7 @@ var (
 	}
 	sort         = flag.Bool("sort", false, "sort from latest to oldest (default : false)")
 	npvtFiles    = []NPVTFile{}
+	npvtFileMap  = make(map[string]NPVTFile) // For deduplication by hash
 	npvtCounter  = 0
 )
 
@@ -59,11 +61,16 @@ type NPVTFile struct {
 	FileName    string
 	ChannelName string
 	LocalPath   string
+	Hash        string // SHA256 hash for deduplication
 }
 
 func main() {
 	gologger.DefaultLogger.SetMaxLevel(levels.LevelDebug)
 	flag.Parse()
+
+	// Clean up old NPVT files before starting
+	gologger.Info().Msg("Cleaning up old NPVT files...")
+	CleanupNPVTDirectory()
 
 	// Create npvt directory if it doesn't exist
 	if err := os.MkdirAll("npvt_files", 0755); err != nil {
@@ -117,11 +124,52 @@ func main() {
 
 	// Create NPVT subscription file
 	if len(npvtFiles) > 0 {
-		gologger.Info().Msg(fmt.Sprintf("Creating NPVT subscription file with %d files", len(npvtFiles)))
+		gologger.Info().Msg(fmt.Sprintf("Creating NPVT subscription file with %d unique files", len(npvtFiles)))
 		CreateNPVTSubscription()
+	} else {
+		gologger.Info().Msg("No NPVT files found")
+		// Create empty files to avoid git errors
+		collector.WriteToFile("", "npvt_iran.txt")
+		collector.WriteToFile("[]", "npvt_subscription.json")
 	}
 
 	gologger.Info().Msg("All Done :D")
+}
+
+func CleanupNPVTDirectory() {
+	npvtDir := "npvt_files"
+	
+	// Check if directory exists
+	if _, err := os.Stat(npvtDir); os.IsNotExist(err) {
+		gologger.Info().Msg("NPVT directory doesn't exist yet, skipping cleanup")
+		return
+	}
+
+	// Read all files in the directory
+	files, err := os.ReadDir(npvtDir)
+	if err != nil {
+		gologger.Error().Msg("Failed to read NPVT directory: " + err.Error())
+		return
+	}
+
+	// Delete all .npvt files
+	deletedCount := 0
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".npvt") {
+			filePath := filepath.Join(npvtDir, file.Name())
+			if err := os.Remove(filePath); err != nil {
+				gologger.Error().Msg(fmt.Sprintf("Failed to delete %s: %v", filePath, err))
+			} else {
+				deletedCount++
+			}
+		}
+	}
+
+	if deletedCount > 0 {
+		gologger.Info().Msg(fmt.Sprintf("Deleted %d old NPVT files", deletedCount))
+	} else {
+		gologger.Info().Msg("No old NPVT files to delete")
+	}
 }
 
 func AddConfigNames(config string, configtype string) string {
@@ -224,13 +272,7 @@ func CrawlForV2ray(doc *goquery.Document, channelLink string, HasAllMessagesFlag
 }
 
 func DownloadNPVTFile(url, fileName, channelName string) error {
-	// Create a unique filename
-	npvtCounter++
-	safeChannelName := strings.ReplaceAll(channelName, "/", "_")
-	safeFileName := fmt.Sprintf("%s_%d_%s", safeChannelName, npvtCounter, filepath.Base(fileName))
-	localPath := filepath.Join("npvt_files", safeFileName)
-
-	// Download the file
+	// Download the file to memory first
 	resp, err := client.Get(url)
 	if err != nil {
 		return err
@@ -241,26 +283,43 @@ func DownloadNPVTFile(url, fileName, channelName string) error {
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	// Create the file
-	out, err := os.Create(localPath)
+	// Read file content
+	fileContent, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
+	// Calculate hash for deduplication
+	hash := fmt.Sprintf("%x", sha256.Sum256(fileContent))
+
+	// Check if we already have this exact file
+	if existingFile, exists := npvtFileMap[hash]; exists {
+		gologger.Info().Msg(fmt.Sprintf("Skipping duplicate file: %s (same as %s)", fileName, existingFile.FileName))
+		return nil
+	}
+
+	// Create a unique filename
+	npvtCounter++
+	safeChannelName := strings.ReplaceAll(channelName, "/", "_")
+	safeFileName := fmt.Sprintf("%s_%d_%s", safeChannelName, npvtCounter, filepath.Base(fileName))
+	localPath := filepath.Join("npvt_files", safeFileName)
+
+	// Write the file
+	if err := os.WriteFile(localPath, fileContent, 0644); err != nil {
 		return err
 	}
 
 	// Store file info
-	npvtFiles = append(npvtFiles, NPVTFile{
+	npvtFile := NPVTFile{
 		URL:         url,
 		FileName:    fileName,
 		ChannelName: channelName,
 		LocalPath:   localPath,
-	})
+		Hash:        hash,
+	}
+	
+	npvtFiles = append(npvtFiles, npvtFile)
+	npvtFileMap[hash] = npvtFile
 
 	gologger.Info().Msg(fmt.Sprintf("Downloaded: %s -> %s", fileName, localPath))
 	return nil
@@ -270,10 +329,14 @@ func CreateNPVTSubscription() {
 	var subscriptionData []map[string]string
 	
 	for _, npvt := range npvtFiles {
+		// For GitHub Pages, the URL will be:
+		// https://YOUR-USERNAME.github.io/YOUR-REPO/npvt_files/FILENAME
+		// For raw GitHub content:
+		// https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/npvt_files/FILENAME
 		
 		subscriptionData = append(subscriptionData, map[string]string{
 			"name":    fmt.Sprintf("%s - %s", npvt.ChannelName, npvt.FileName),
-			"url":     fmt.Sprintf("https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/%s", npvt.LocalPath),
+			"url":     fmt.Sprintf("https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/%s", npvt.LocalPath),
 			"channel": npvt.ChannelName,
 			"file":    npvt.FileName,
 		})
@@ -291,7 +354,7 @@ func CreateNPVTSubscription() {
 	// Also create a simple text list of URLs
 	var urlList strings.Builder
 	for _, npvt := range npvtFiles {
-		urlList.WriteString(fmt.Sprintf("https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/%s\n", npvt.LocalPath))
+		urlList.WriteString(fmt.Sprintf("https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/%s\n", npvt.LocalPath))
 	}
 	
 	collector.WriteToFile(urlList.String(), "npvt_iran.txt")
