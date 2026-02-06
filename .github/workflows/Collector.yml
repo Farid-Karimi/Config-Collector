@@ -33,6 +33,9 @@ jobs:
         git add ./vless_iran.txt
         git add ./ss_iran.txt
         git add ./mixed_iran.txt
+        git add ./npvt_iran.txt
+        git add ./npvt_subscription.json
+        git add ./npvt_files/*.npvt
         git checkout main
         git commit -m "✔️ $(date '+%Y-%m-%d %H:%M:%S') Collected"
     - name: Push Changes
