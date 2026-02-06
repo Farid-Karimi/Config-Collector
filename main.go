@@ -329,14 +329,10 @@ func CreateNPVTSubscription() {
 	var subscriptionData []map[string]string
 	
 	for _, npvt := range npvtFiles {
-		// For GitHub Pages, the URL will be:
-		// https://YOUR-USERNAME.github.io/YOUR-REPO/npvt_files/FILENAME
-		// For raw GitHub content:
-		// https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/npvt_files/FILENAME
 		
 		subscriptionData = append(subscriptionData, map[string]string{
 			"name":    fmt.Sprintf("%s - %s", npvt.ChannelName, npvt.FileName),
-			"url":     fmt.Sprintf("https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/%s", npvt.LocalPath),
+			"url":     fmt.Sprintf("https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/%s", npvt.LocalPath),
 			"channel": npvt.ChannelName,
 			"file":    npvt.FileName,
 		})
@@ -354,7 +350,7 @@ func CreateNPVTSubscription() {
 	// Also create a simple text list of URLs
 	var urlList strings.Builder
 	for _, npvt := range npvtFiles {
-		urlList.WriteString(fmt.Sprintf("https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/%s\n", npvt.LocalPath))
+		urlList.WriteString(fmt.Sprintf("https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/%s\n", npvt.LocalPath))
 	}
 	
 	collector.WriteToFile(urlList.String(), "npvt_iran.txt")
