@@ -1,6 +1,5 @@
-vless://zqxv6HyzrU2qGR11qQpbw/8874RAx924vLnReKXYuF2/ownOHiB9IWoF/fFyHgQz/olSmLiu4b9wtnr8IxEsvM7HXo1sQeYMHIIctlcxc8A1G8JJ3oeAI7SuxIWTCoyBsYwpN2dycSQ9h/MwuQ9XWcjor1yLG5B1FLQWTg7OMoaATvXZV2K59Ihf0CKxK/RyFiGFLo4LCkOPhY3CMP7YHmGGJs9Lz+5q2SUWQzXbk4Y=#iSeqaro-381
-vless://fe08cb95-a7bd-48d3-b3e8-e083ab8cd9bc@217.114.40.151:9000?security=none&encryption=none&headerType=http&type=tcp#iSeqaro-380
-vless://fafe7971-b3fb-4f99-a9d7-46374153f64e@a-m.iran-mehrbu.ir:3131?security=none&encryption=none&headerType=none&type=tcp#Freedomnetir-379
+vless://zqxv6HyzrU2qGR11qQpbw/8874RAx924vLnReKXYuF2/ownOHiB9IWoF/fFyHgQz/olSmLiu4b9wtnr8IxEsvM7HXo1sQeYMHIIctlcxc8A1G8JJ3oeAI7SuxIWTCoyBsYwpN2dycSQ9h/MwuQ9XWcjor1yLG5B1FLQWTg7OMoaATvXZV2K59Ihf0CKxK/RyFiGFLo4LCkOPhY3CMP7YHmGGJs9Lz+5q2SUWQzXbk4Y=#iSeqaro-380
+vless://fe08cb95-a7bd-48d3-b3e8-e083ab8cd9bc@217.114.40.151:9000?security=none&encryption=none&headerType=http&type=tcp#iSeqaro-379
 vless://f9d9a8e6-7df0-4c7b-bb2d-97d1c7e14f1f@45.82.136.188:443?path=%2F&security=tls&encryption=none&insecure=1&type=ws&allowInsecure=1&sni=webassets.cafebazaar.ir#Freedomnetir-378
 vless://ed76b56c-9009-46f0-9f97-c37bf2375815@151.101.10.79:443?security=tls&encryption=none&insecure=0&host=frenchboijji.global.ssl.fastly.net&type=ws&allowInsecure=0&sni=frenchboijji.global.ssl.fastly.net#iSeqaro-377
 vless://eb071647-72a6-46be-8e89-ff3d228d52f6@jp.cdn.stun.su:443?security=reality&encryption=none&pbk=2Q0J_OPL73qhEIYf3YBLCuY4RIBurgz5QDVchQ8e9ks&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=jp.cdn.stun.su&sid=f189d91760bb6663#vpn_ioss-376
